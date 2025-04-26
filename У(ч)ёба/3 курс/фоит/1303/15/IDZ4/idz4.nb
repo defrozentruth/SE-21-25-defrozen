@@ -1,0 +1,54 @@
+t = 3.75;
+discrSignal = 
+  ReadList["E:\\downloads\\signaldigit15.txt", {Number, Number, 
+    Number, Number, Number, Number, Number, Number}];
+analSignal = 
+  Table[FromDigits[discrSignal[[i]], 2], {i, 1, Length@discrSignal}];
+ListPlot[Table[{(i - 1)*(t/Length@discrSignal), analSignal[[i]]}, {i, 
+   1, Length@discrSignal}], Filling -> Axis, PlotRange -> Full]
+
+Fsig = Fourier[analSignal];
+ListPlot[Table[{2 \[Pi] (1/t) (i - 1), Abs@Fsig[[i]]}, {i, 2, 
+   Length@Fsig}], Filling -> Axis, PlotRange -> Full]
+
+coef = 2.25;
+R1 = 50;
+C1 = 0.0000059*coef;
+C2 = 0.0000054*coef;
+C3 = 0.0000041*coef;
+C4 = 0.0000024*coef;
+C5 = 497.9*10^-9*coef;
+L1 = 0.0124*coef;
+L2 = 0.0144*coef;
+L3 = 0.012*coef;
+L4 = 0.0083*coef;
+L5 = 0.0037*coef;
+Zpar5[w_] = 1/(I w C5 + 1/R1);
+Zpar4[w_] = 1/(I w C4 + 1/(I w L5 + Zpar5[w]));
+Zpar3[w_] = 1/(I w C3 + 1/(I w L4 + Zpar4[w]));
+Zpar2[w_] = 1/(I w C2 + 1/(I w L3 + Zpar3[w]));
+Zpar[w_] = 1/(I w C1 + 1/(I w L2 + Zpar2[w]));
+I1[w_] = Uin/(I w L1 + Zpar[w]);
+Upar[w_] = I1[w]*Zpar[w];
+I2[w_] = Upar[w]/(I w L2 + Zpar2[w]);
+Upar2[w_] = I2[w]*Zpar2[w];
+I3[w_] = Upar2[w]/(I w L3 + Zpar3[w]);
+Upar3[w_] = I3[w]*Zpar3[w];
+I4[w_] = Upar3[w]/(I w L4 + Zpar4[w]);
+Upar4[w_] = I4[w]*Zpar4[w];
+I5[w_] = Upar4[w]/(I w L5 + Zpar5[w]);
+Upar5[w_] = I5[w]*Zpar5[w];
+Uout[w_] = Upar5[w];
+H[w_] = Uout[w]/Uin;
+
+Fnew = Fsig*Table[Abs@H[i], {i, 1, Length@Fsig}];
+Plot[Abs@H[w], {w, 1, Length@Fsig/10}, PlotRange -> Full]
+
+ListPlot[Table[{2 \[Pi] (1/t) (i - 1), Abs@Fnew[[i]]}, {i, 2, 
+   Length@Fsig}], Filling -> Axis, PlotRange -> Full]
+
+filterSignal = InverseFourier[Fnew];
+ListPlot[Table[{(i - 1)*(t/Length@discrSignal), 
+   Re@filterSignal[[i]]}, {i, 1, Length@discrSignal}], 
+ Filling -> Axis, PlotRange -> Full]
+ListPlay[Re@filterSignal, SampleRate -> 44100]
